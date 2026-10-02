@@ -95,27 +95,42 @@ monte-carlo-simulation/
 
 ---
 
-## 5. セットアップ (Setup)
+## 5. 開発環境のセットアップ (Setup with uv)
 
-### 開発環境
-- Python 3.10+ 推奨
-- パッケージ管理: `uv`（推奨）または `venv`
+本プロジェクトでは、高速かつ再現性の高いパッケージ・Python環境管理ツールとして **`uv`** を採用しています。
 
-### 環境構築手順 (uv の場合)
+### 5.1. uv のインストール (macOS)
+Homebrew または公式スタンドアロンインストーラで導入できます：
+
 ```bash
-# 仮想環境の作成と有効化
-uv venv
-source .venv/bin/activate
+# Homebrew の場合
+brew install uv
 
-# 依存関係のインストール（導入後）
-uv pip install -e .
+# または 公式インストーラの場合
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-### 環境構築手順 (標準 venv の場合)
+### 5.2. Python 3.14 仮想環境の作成と依存関係の同期
+`uv` は指定バージョンの Python 本体を自動ダウンロードして管理します。`uv.lock` がリポジトリに含まれているため、`uv sync` で完全に同じ環境が再現されます。
+
 ```bash
-python3 -m venv .venv
+# プロジェクトルートで Python 3.14 仮想環境を作成
+uv venv --python 3.14
+
+# 仮想環境の有効化
 source .venv/bin/activate
-pip install --upgrade pip
+
+# ロックファイルに基づく全依存関係（開発用含む）の完全同期
+uv sync --extra dev
+```
+
+### 5.3. 動作確認とテスト実行
+```bash
+# ライブラリ読み込みの確認
+uv run python -c "import numpy, scipy, matplotlib, pytest; print('OK!')"
+
+# テスト実行
+uv run pytest
 ```
 
 ---

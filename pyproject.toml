@@ -1,0 +1,31 @@
+[project]
+name = "monte-carlo-simulation"
+version = "0.1.0"
+description = "Monte Carlo simulations for statistical physics lattice models"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26.0",
+    "scipy>=1.11.0",
+    "matplotlib>=3.8.0",
+    "tqdm>=4.66.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.3.0",
+    "mypy>=1.9.0",
+    "ipykernel>=6.29.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.pytest.ini_options]
+testpaths = ["models"]
+python_files = ["test_*.py"]
