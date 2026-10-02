@@ -1,0 +1,60 @@
+# Antigravity / AI Agent configuration
+AGENTS.md
+Agents.md
+agents.md
+.agents/
+
+# Python Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Testing & Type Checking
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# Output Data, Plots, and Media (Large/Generated files)
+outputs/
+data/
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.gif
+*.mp4
+*.h5
+*.npy
+*.npz
+*.csv
+
+# Future C++ / Rust build artifacts
+target/
+build/
+dist/
+*.o
+*.a
+*.dylib
+
+# macOS System Files
+.DS_Store
+._*
+
+# Editor / IDE settings
+.idea/
+.vscode/
+*.swp
+*~
