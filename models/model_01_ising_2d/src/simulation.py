@@ -17,6 +17,7 @@ def run_simulation(
     J: float = 1.0,
     h: float = 0.0,
     init_method: Literal["random", "all_up", "all_down"] = "random",
+    engine_type: Literal["rust", "python"] = "rust",
     seed: int | None = None,
 ) -> SimulationResult:
     """
@@ -49,8 +50,15 @@ def run_simulation(
         統計集計された物理量結果
     """
     # 1. エンジンとアキュムレータの初期化
-    ising = Ising2D(L=L, temperature=temperature, J=J, h=h, seed=seed)
-    ising.initialize_spins(method=init_method)
+    if engine_type == "rust":
+        import mc_core
+        ising = mc_core.Ising2DRust(L, temperature, j=J, h=h, seed=seed)
+    elif engine_type == "python":
+        ising = Ising2D(L=L, temperature=temperature, J=J, h=h, seed=seed)
+    else:
+        raise ValueError(f"Unknown engine_type: {engine_type}")
+
+    ising.initialize_spins(method=init_method if engine_type == "python" else init_method)
     accumulator = ObservableAccumulator(L=L, temperature=temperature)
 
     # 2. 初期熱平衡化（Burn-in: 計測は行わない）

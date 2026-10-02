@@ -103,3 +103,37 @@ def test_high_temperature_acceptance():
     # (受託率 > 0.9)
     acceptance_rate = accepted / trials
     assert acceptance_rate > 0.8
+
+
+def test_rust_engine_ground_state_and_limits():
+    """Rust 実装 Ising2DRust の基底状態エネルギー、スピン取得、極限挙動の検証."""
+    import mc_core
+
+    L = 8
+    J = 1.5
+    N = L * L
+
+    # 1. 基底状態エネルギー
+    rust_ising = mc_core.Ising2DRust(L, 1.0, j=J, seed=42)
+    rust_ising.initialize_spins("all_up")
+    assert rust_ising.total_magnetization() == N
+    assert np.isclose(rust_ising.total_energy(), -2.0 * J * N)
+
+    # NumPy 配列として取得
+    spins_np = rust_ising.get_spins()
+    assert spins_np.shape == (L, L)
+    assert np.all(spins_np == 1)
+
+    # 2. 極低温 (T -> 0) 凍結
+    cold_ising = mc_core.Ising2DRust(L, 0.01, j=1.0, seed=42)
+    cold_ising.initialize_spins("all_up")
+    accepted, trials = cold_ising.step_metropolis()
+    assert accepted == 0
+    assert trials == N
+
+    # 3. 超高温 (T -> inf) 受託率
+    hot_ising = mc_core.Ising2DRust(L, 1000.0, j=1.0, seed=42)
+    hot_ising.initialize_spins("all_up")
+    accepted, trials = hot_ising.step_metropolis()
+    assert (accepted / trials) > 0.8
+
