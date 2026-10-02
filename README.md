@@ -42,7 +42,7 @@ graph LR
 ### Phase 1: 基礎格子模型と幾何学的フラストレーション
 | ディレクトリ | 対象モデル | 主要アルゴリズム | 物理的トピック・検証項目 |
 | :--- | :--- | :--- | :--- |
-| `01_ising_2d` | **2次元正方格子イジング模型** | メトロポリス法 / Wolff法 | 二次相転移、Onsager厳密解との比較、自発磁化、Binder比 |
+| `model_01_ising_2d` | **2次元正方格子イジング模型** | メトロポリス法 / Wolff法 | 二次相転移、Onsager厳密解との比較、自発磁化、Binder比 |
 | `02_ising_triangular_af` | **三角格子反強磁性イジング模型** | メトロポリス法 / Wang-Landau法 | 幾何学的フラストレーション、残余エントロピー（Wannier解） |
 | `03_percolation` | **パーコレーション（浸透問題）** | Hoshen-Kopelman法 | 幾何学的相転移、フラクタル次元、無限クラスター出現確率 |
 
@@ -84,12 +84,12 @@ monte-carlo-simulation/
 │   ├── 00_mcmc_fundamentals.md# MCMC基礎理論、詳細釣り合い、誤差解析
 │   └── 01_advanced_sampling.md# クラスター法、拡張アンサンブル、量子モンテカルロ
 └── models/                    # モデル別独立ディレクトリ
-    ├── 01_ising_2d/           # 2次元イジング模型
+    ├── model_01_ising_2d/     # 2次元イジング模型
     │   ├── README.md          # 数理定式化・理論背景・実験手順
     │   ├── src/               # エンジン・計測・可視化コード
     │   ├── tests/             # 単体テスト・詳細釣り合いの検証
     │   └── notebooks/         # 解析・アニメーション作成
-    ├── 02_ising_triangular_af/
+    ├── model_02_ising_triangular_af/
     └── ...
 ```
 

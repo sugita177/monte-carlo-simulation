@@ -29,3 +29,4 @@ target-version = "py312"
 [tool.pytest.ini_options]
 testpaths = ["models"]
 python_files = ["test_*.py"]
+pythonpath = ["."]
