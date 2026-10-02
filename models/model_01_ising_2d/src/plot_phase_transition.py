@@ -41,7 +41,7 @@ def main() -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # 実験パラメータ
-    lattice_sizes = [8, 16, 24]
+    lattice_sizes = [8, 16, 24, 32, 40, 48]
     temperatures = np.linspace(1.5, 3.5, 26)
     mcs_thermalize = 1000
     mcs_measure = 4000
@@ -96,8 +96,8 @@ def main() -> None:
         fontweight="bold",
     )
 
-    colors = {8: "#1f77b4", 16: "#ff7f0e", 24: "#2ca02c"}
-    markers = {8: "o", 16: "s", 24: "^"}
+    colors = {8: "#1f77b4", 16: "#ff7f0e", 24: "#2ca02c", 32: "#d62728", 40: "#9467bd", 48: "#8c564b"}
+    markers = {8: "o", 16: "s", 24: "^", 32: "d", 40: "p", 48: "*"}
 
     # 1. 自発磁化 <|m|> vs T
     ax = axes[0, 0]

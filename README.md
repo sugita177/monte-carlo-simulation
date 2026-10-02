@@ -95,19 +95,30 @@ monte-carlo-simulation/
 
 ---
 
-## 5. 開発環境のセットアップ (Setup with uv)
+## 5. 開発環境のセットアップ (Setup)
 
-本プロジェクトでは、高速かつ再現性の高いパッケージ・Python環境管理ツールとして **`uv`** を採用しています。
+本プロジェクトでは、Python 環境管理に **`uv`**、高速計算コアの開発に **`Rust (Cargo + PyO3 + maturin)`** を採用しています。
 
-### 5.1. uv のインストール (macOS)
-Homebrew または公式スタンドアロンインストーラで導入できます：
+### 5.1. 必要なツールチェーンの導入 (macOS)
 
+#### Python & uv のインストール
 ```bash
 # Homebrew の場合
 brew install uv
 
 # または 公式インストーラの場合
 curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+#### Rust ツールチェーンのインストール
+Rust 公式インストーラ（rustup）を用いて導入します：
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source "$HOME/.cargo/env"
+
+# バージョン確認 (1.75+ 推奨)
+rustc --version
+cargo --version
 ```
 
 ### 5.2. Python 3.14 仮想環境の作成と依存関係の同期
@@ -120,16 +131,24 @@ uv venv --python 3.14
 # 仮想環境の有効化
 source .venv/bin/activate
 
-# ロックファイルに基づく全依存関係（開発用含む）の完全同期
+# ロックファイルに基づく全依存関係（開発用・maturin 含む）の完全同期
 uv sync --extra dev
 ```
 
-### 5.3. 動作確認とテスト実行
+### 5.3. Rust コアエンジンのビルド (maturin)
+Rust で記述された計算コア（`crates/mc_core`）をコンパイルし、現在の Python 仮想環境に直接バインド（インポート可能化）します：
+
+```bash
+# 開発モードで Rust モジュールを即座にビルド・配置
+uv run maturin develop --release --manifest-path crates/mc_core/Cargo.toml
+```
+
+### 5.4. 動作確認とテスト実行
 ```bash
 # ライブラリ読み込みの確認
-uv run python -c "import numpy, scipy, matplotlib, pytest; print('OK!')"
+uv run python -c "import numpy, scipy, matplotlib, pytest; print('Python OK!')"
 
-# テスト実行
+# 単体テストの実行
 uv run pytest
 ```
 
