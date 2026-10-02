@@ -165,3 +165,51 @@ impl Ising2DRust {
         arr1d.reshape([self.l, self.l])
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ground_state_energy() {
+        let l = 8;
+        let j = 1.5;
+        let n = l * l;
+        let mut ising = Ising2DRust::new(l, 1.0, j, 0.0, Some(42));
+
+        // all_up の基底状態
+        ising.initialize_spins("all_up").unwrap();
+        assert_eq!(ising.total_magnetization(), n as i64);
+        assert!((ising.total_energy() - (-2.0 * j * n as f64)).abs() < 1e-10);
+
+        // all_down の基底状態
+        ising.initialize_spins("all_down").unwrap();
+        assert_eq!(ising.total_magnetization(), -(n as i64));
+        assert!((ising.total_energy() - (-2.0 * j * n as f64)).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_low_temperature_freezing() {
+        let l = 8;
+        let mut ising = Ising2DRust::new(l, 0.01, 1.0, 0.0, Some(42));
+        ising.initialize_spins("all_up").unwrap();
+
+        // 極低温では反転受託が 0 回で凍結する
+        let (accepted, trials) = ising.step_metropolis();
+        assert_eq!(accepted, 0);
+        assert_eq!(trials, l * l);
+    }
+
+    #[test]
+    fn test_high_temperature_acceptance() {
+        let l = 8;
+        let mut ising = Ising2DRust::new(l, 1000.0, 1.0, 0.0, Some(42));
+        ising.initialize_spins("all_up").unwrap();
+
+        // 超高温ではほぼ全ての反転が受託される (受託率 > 0.8)
+        let (accepted, trials) = ising.step_metropolis();
+        let rate = accepted as f64 / trials as f64;
+        assert!(rate > 0.8, "Acceptance rate was too low: {}", rate);
+    }
+}
+
