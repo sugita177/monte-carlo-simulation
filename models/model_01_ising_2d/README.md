@@ -216,6 +216,39 @@ $$
 
 ---
 
+## 6. 実装の検証とテスト設計 (Testing & Verification)
+
+統計物理の MCMC シミュレーションは確率的挙動を含むため、「何となく動いている」だけでは潜在的なバグ（詳細釣り合いの破れ、境界条件の不整合、係数ミスなど）を見逃す危険があります。
+本プロジェクトでは、コードの正当性と計算エンジンの信頼性を担保するため、**理論的厳密解が存在する極限状態** を活用した 2 層のテスト体系を構築しています。
+
+### 6.1. テストの観点と理論的保証
+
+| テスト観点 | 対象 | 理論的保証・期待される振る舞い |
+| :--- | :--- | :--- |
+| **基底状態エネルギー** | Python / Rust | 完全強磁性配位（all up / all down）において、エネルギーが厳密解 $E = -2JN - hN$ と一致すること。 |
+| **局所エネルギー変化 $\Delta E$ の整合性** | Python | 1スピン反転時の局所計算 $\Delta E$ が、配位全体の再計算差分 $E_{\text{after}} - E_{\text{before}}$ と完全一致すること（係数 2 や PBC の保証）。 |
+| **極低温凍結 ($T \to 0$)** | Python / Rust | 基底状態からのスピン反転試行において、受託確率 $\exp(-\beta \Delta E) \approx 0$ となり、反転受託数が 0 回（凍結）となること。 |
+| **超高温挙動 ($T \to \infty$)** | Python / Rust | $\beta \to 0$ では受託確率 $\min(1, \exp(-\beta \Delta E)) \to 1$ となり、ほぼすべての反転が受託されること（受託率 $> 80\%$）。 |
+| **言語間整合性 (Python vs Rust)** | 結合テスト | 同一のスピン配位に対して、Python 版と Rust 版の `total_energy()` が厳密に同一の値を返すこと。 |
+| **例外ハンドリング** | 結合テスト | 不正な初期化名（例: `"invalid"`）を渡した際、Rust の `PyResult` が Python の `ValueError` として正しく送出されること。 |
+| **有限温度の相転移挙動** | 結合テスト | 低温相 ($T=1.0$) で自発磁化 $\langle \|m\| \rangle > 0.95$、高温相 ($T=5.0$) で Binder 比 $U_4 \to 0$ となること。 |
+
+### 6.2. テストの実行方法
+
+```bash
+# 1. Rust コアエンジンのネイティブ単体テスト (3 passed)
+uv run cargo test --manifest-path crates/mc_core/Cargo.toml --no-default-features
+
+# 2. Python 結合テストおよびシミュレーション全体の検証 (13 passed)
+uv run pytest
+```
+
+> **macOS での Rust ネイティブテストの背景**:
+> PyO3 の `extension-module` 機能は、Python プロセスから共有ライブラリとして読み込まれることを前提としています。`cargo test` 単体では独立バイナリとしてリンクを試みるため、macOS の厳格なリンカにより Python シンボル未定義エラーが発生します。  
+> `Cargo.toml` で features 分割（`extension-module = ["pyo3/extension-module"]`）を行い、`--no-default-features` を指定して `uv run` 経由で実行することで、仮想環境の Python ライブラリと正しくリンクしてテストを実行できます。
+
+---
+
 ## 7. 数値実験結果と理論との比較検証 (Results & Discussion)
 
 本シミュレーションエンジンおよびメトロポリス法を用いて、温度スイープ実験（$T \in [1.5, 3.5]$、26点、$L \in \{8, 16, 24\}$）を実施した結果を以下にまとめます。

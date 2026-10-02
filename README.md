@@ -144,13 +144,18 @@ uv run maturin develop --release --manifest-path crates/mc_core/Cargo.toml
 ```
 
 ### 5.4. 動作確認とテスト実行
-```bash
-# ライブラリ読み込みの確認
-uv run python -c "import numpy, scipy, matplotlib, pytest; print('Python OK!')"
 
-# 単体テストの実行
+本プロジェクトでは、コア計算の信頼性を担保するため **Rust ネイティブ単体テスト** と **Python 結合テスト** の 2 層テスト体制をとっています：
+
+```bash
+# 1. Rust コアエンジンのネイティブ単体テスト (基底状態、T->0 凍結、T->inf 受託率)
+uv run cargo test --manifest-path crates/mc_core/Cargo.toml --no-default-features
+
+# 2. Python 結合テストおよびシミュレーション全体の検証 (pytest)
 uv run pytest
 ```
+> **Note (macOS での Rust テスト)**:
+> PyO3 の `extension-module` 特有のリンカ挙動に対応するため、Rust ネイティブテスト時は `--no-default-features` を付与し、`uv run` 経由で Python 仮想環境のライブラリとリンクして実行します。
 
 ---
 
