@@ -146,3 +146,7 @@ class Ising2D:
         """系全体の全磁化 M = sum(s_i) を計算する."""
         # 全スピンの総和
         return int(np.sum(self.spins))
+
+    def get_spins(self) -> np.ndarray:
+        """現在のスピン配位 (L, L) を返す (Rust コアエンジンとの互換用)."""
+        return self.spins

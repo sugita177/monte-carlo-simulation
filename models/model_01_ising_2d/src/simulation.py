@@ -7,6 +7,16 @@ from typing import Literal
 from models.model_01_ising_2d.src.ising import Ising2D
 from models.model_01_ising_2d.src.observables import ObservableAccumulator, SimulationResult
 
+def _run_one_mcs(ising, algorithm: str, N: int) -> None:
+    if algorithm == "metropolis":
+        ising.step_metropolis()
+    elif algorithm == "wolff":
+        flipped = 0
+        while flipped < N:
+            flipped += ising.step_wolff()
+    else:
+        raise ValueError(f"Unknown algorithm: {algorithm}")
+
 
 def run_simulation(
     L: int,
@@ -18,6 +28,7 @@ def run_simulation(
     h: float = 0.0,
     init_method: Literal["random", "all_up", "all_down"] = "random",
     engine_type: Literal["rust", "python"] = "rust",
+    algorithm: Literal["metropolis", "wolff"] = "metropolis",
     seed: int | None = None,
 ) -> SimulationResult:
     """
@@ -49,6 +60,13 @@ def run_simulation(
     SimulationResult
         統計集計された物理量結果
     """
+    # ガード条件
+    if algorithm == "wolff":
+        if engine_type == "python":
+            raise NotImplementedError("Wolff algorithm is currently only implemented in Rust engine.")
+        if h != 0.0:
+            raise NotImplementedError("Standard Wolff cluster algorithm only supports zero external field (h=0).")
+
     # 1. エンジンとアキュムレータの初期化
     if engine_type == "rust":
         import mc_core
@@ -61,13 +79,16 @@ def run_simulation(
     ising.initialize_spins(method=init_method if engine_type == "python" else init_method)
     accumulator = ObservableAccumulator(L=L, temperature=temperature)
 
+    # スピン数
+    N = L * L
+
     # 2. 初期熱平衡化（Burn-in: 計測は行わない）
     for _ in range(mcs_thermalize):
-        ising.step_metropolis()
+        _run_one_mcs(ising, algorithm=algorithm, N=N)
 
     # 3. 本測定（サンプリング間隔ごとに物理量を記録）
     for mcs in range(mcs_measure):
-        ising.step_metropolis()
+        _run_one_mcs(ising, algorithm=algorithm, N=N)
         if mcs % sample_interval == 0:
             E = ising.total_energy()
             M = ising.total_magnetization()
