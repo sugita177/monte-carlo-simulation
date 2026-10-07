@@ -105,3 +105,49 @@ def test_run_simulation_with_both_engines():
     assert res_py.mean_magnetization_per_spin > 0.95
     assert res_rust.mean_energy_per_spin < -1.8
     assert res_py.mean_energy_per_spin < -1.8
+
+
+def test_rust_step_wolff():
+    """Rust の step_wolff メソッドの Python バインディング検証."""
+    L = 8
+    N = L * L
+
+    # 1. 極低温: 全スピンが一括反転
+    cold_ising = mc_core.Ising2DRust(L, temperature=0.01, j=1.0, h=0.0, seed=42)
+    cold_ising.initialize_spins("all_up")
+    assert cold_ising.total_magnetization() == N
+
+    cluster_size = cold_ising.step_wolff()
+    assert cluster_size == N
+    assert cold_ising.total_magnetization() == -N
+
+    # 2. 超高温: ほぼ 1 スピンのみ反転
+    hot_ising = mc_core.Ising2DRust(L, temperature=1000.0, j=1.0, h=0.0, seed=42)
+    hot_ising.initialize_spins("all_up")
+    c_size_hot = hot_ising.step_wolff()
+    assert c_size_hot <= 2
+
+
+def test_run_simulation_with_wolff_algorithm():
+    """run_simulation を algorithm='wolff' で実行し、正しく秩序相が得られることを検証."""
+    res_wolff = run_simulation(
+        L=8,
+        temperature=1.0,
+        mcs_thermalize=50,
+        mcs_measure=100,
+        sample_interval=2,
+        init_method="random",
+        algorithm="wolff",
+        seed=42,
+    )
+    # Wolff 法でも低温秩序相が正しく再現される
+    assert res_wolff.mean_magnetization_per_spin > 0.95
+    assert res_wolff.mean_energy_per_spin < -1.8
+
+    # ガード条件のテスト: Python エンジンでの Wolff 指定は NotImplementedError
+    with pytest.raises(NotImplementedError, match="Rust engine"):
+        run_simulation(L=8, temperature=1.0, engine_type="python", algorithm="wolff")
+
+    # ガード条件のテスト: 外場 h != 0 での Wolff 指定は NotImplementedError
+    with pytest.raises(NotImplementedError, match="zero external field"):
+        run_simulation(L=8, temperature=1.0, algorithm="wolff", h=0.5)

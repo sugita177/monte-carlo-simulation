@@ -125,6 +125,50 @@ impl Ising2DRust {
         (accepted, self.n)
     }
 
+    /// Wolff 単一クラスターアルゴリズムを 1 ステップ実行し、
+    /// 反転されたクラスターサイズ（スピン数）を返す
+    pub fn step_wolff(&mut self) -> usize {
+        let n = self.n;
+
+        // 1. ランダムにシードインデックス (0 .. n) を選ぶ
+        let seed_idx = self.rng.gen_range(0..n);
+        let old_spin = self.spins[seed_idx];
+        let new_spin = -old_spin;
+
+        // シードを即座に反転し、スタックに投入
+        self.spins[seed_idx] = new_spin;
+        let mut stack = Vec::with_capacity(n);
+        stack.push(seed_idx);
+        let mut cluster_size = 1;
+
+        // ボンド結合確率 Padd = 1 - exp(-2 * beta * J)
+        let p_add = 1.0 - (-2.0 * self.beta * self.j).exp();
+
+        // 2. スタックが空になるまで探索・クラスター成長
+        while let Some(current_idx) = stack.pop() {
+            let x = current_idx / self.l;
+            let y = current_idx % self.l;
+            let neighbors = [
+                ((x + self.l - 1) % self.l) * self.l + y, // 上
+                ((x + 1) % self.l) * self.l + y,          // 下
+                x * self.l + ((y + self.l - 1) % self.l), // 左
+                x * self.l + ((y + 1) % self.l),          // 右
+            ];
+
+            for &nb_idx in &neighbors {
+                // 条件 1: self.spins[nb_idx] が old_spin と等しいか？
+                // 条件 2: self.rng.gen::<f64>() < p_add か？
+                if self.spins[nb_idx] == old_spin && self.rng.gen::<f64>() < p_add {
+                    self.spins[nb_idx] = new_spin;
+                    stack.push(nb_idx);
+                    cluster_size += 1;
+                }
+            }
+        }
+
+        cluster_size
+    }
+
     /// 全ハミルトニアン H の厳密計算
     pub fn total_energy(&self) -> f64 {
         let mut interaction_sum: i64 = 0;
@@ -211,5 +255,29 @@ mod tests {
         let rate = accepted as f64 / trials as f64;
         assert!(rate > 0.8, "Acceptance rate was too low: {}", rate);
     }
-}
 
+    #[test]
+    fn test_wolff_low_temperature_full_flip() {
+        let l = 8;
+        let n = l * l;
+        // 極低温 (T -> 0): Padd ~ 1.0 なので、全スピンが一括反転する
+        let mut ising = Ising2DRust::new(l, 0.01, 1.0, 0.0, Some(42));
+        ising.initialize_spins("all_up").unwrap();
+        assert_eq!(ising.total_magnetization(), n as i64);
+
+        let cluster_size = ising.step_wolff();
+        assert_eq!(cluster_size, n, "At T->0, the entire lattice should flip as a single cluster");
+        assert_eq!(ising.total_magnetization(), -(n as i64));
+    }
+
+    #[test]
+    fn test_wolff_high_temperature_single_spin() {
+        let l = 8;
+        // 超高温 (T -> inf): Padd ~ 0.0 なので、ほぼシードスピン1個のみ反転する
+        let mut ising = Ising2DRust::new(l, 1000.0, 1.0, 0.0, Some(42));
+        ising.initialize_spins("all_up").unwrap();
+
+        let cluster_size = ising.step_wolff();
+        assert!(cluster_size <= 2, "At T->inf, cluster size should be close to 1: got {}", cluster_size);
+    }
+}

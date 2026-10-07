@@ -1,5 +1,6 @@
 """Phase transition analysis and plotting against Onsager exact solution for 2D Ising model."""
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -36,6 +37,34 @@ def onsager_exact_magnetization(temperatures: np.ndarray, J: float = 1.0) -> np.
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="2D Ising Model Phase Transition Plotter")
+    parser.add_argument(
+        "--engine",
+        type=str,
+        choices=["rust", "python"],
+        default="rust",
+        help="Engine implementation to use (default: rust)",
+    )
+    parser.add_argument(
+        "--algorithm",
+        type=str,
+        choices=["wolff", "metropolis"],
+        default="wolff",
+        help="Sampling algorithm to use (default: wolff)",
+    )
+    args = parser.parse_args()
+
+    # ガード条件: Python エンジンでの Wolff は未サポート
+    if args.engine == "python" and args.algorithm == "wolff":
+        raise NotImplementedError(
+            "Wolff algorithm is currently only implemented in Rust engine. "
+            "Please use --engine rust or specify --algorithm metropolis for python."
+        )
+
+    engine_name = args.engine
+    algo_name = args.algorithm
+    algo_display = "Wolff Cluster Algorithm" if algo_name == "wolff" else "Metropolis Algorithm"
+
     # 出力先ディレクトリの確保
     output_dir = Path(__file__).resolve().parent.parent / "outputs"
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -52,6 +81,8 @@ def main() -> None:
 
     print("=" * 60)
     print("2D Square Lattice Ising Model - Temperature Sweep Simulation")
+    print(f"Engine: {engine_name.upper()}")
+    print(f"Algorithm: {algo_display}")
     print(f"Lattice sizes: {lattice_sizes}")
     print(f"Temperature range: [{temperatures[0]:.2f}, {temperatures[-1]:.2f}] (26 points)")
     print(f"Exact critical temperature Tc = {T_C_EXACT:.6f}")
@@ -75,6 +106,8 @@ def main() -> None:
                 mcs_measure=mcs_measure,
                 sample_interval=sample_interval,
                 init_method="random",
+                engine_type=engine_name,
+                algorithm=algo_name,
                 seed=42,
             )
             res_L["mean_energy"].append(sim_res.mean_energy_per_spin)
@@ -91,7 +124,7 @@ def main() -> None:
     print("\nGenerating phase transition plots...")
     fig, axes = plt.subplots(2, 3, figsize=(16, 10))
     fig.suptitle(
-        f"2D Ising Model Phase Transition (Onsager Exact $T_c \\approx {T_C_EXACT:.4f}$)",
+        f"2D Ising Model Phase Transition [{engine_name.upper()} | {algo_display}] (Onsager Exact $T_c \\approx {T_C_EXACT:.4f}$)",
         fontsize=16,
         fontweight="bold",
     )
@@ -238,7 +271,7 @@ def main() -> None:
     )
 
     plt.tight_layout()
-    plot_path = output_dir / "phase_transition.png"
+    plot_path = output_dir / f"phase_transition_{engine_name}_{algo_name}.png"
     plt.savefig(plot_path, dpi=300)
     plt.close()
 
