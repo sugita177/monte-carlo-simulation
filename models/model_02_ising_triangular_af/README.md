@@ -150,3 +150,17 @@ s(T) = \ln 2 - \int_T^\infty \frac{C_V(T')}{T'} \, dT'
 $$
 
 低温極限 $T \to 0$ において、この積分値が Wannier の理論値 $s(0) \approx 0.323$ に美しく一致することを数値的に検証します。
+
+---
+
+## 6. テスト・検証
+
+本モデルの単体テストおよび統合テストの実行コマンドについては、プロジェクト全体の [README.md: 5.4. 動作確認とテスト実行](../../README.md#54-動作確認とテスト実行) を参照してください。
+
+```bash
+# Rust 単体テスト
+uv run cargo test --test test_ising_triangular --no-default-features
+
+# Python 統合テスト
+uv run pytest models/model_02_ising_triangular_af/tests/
+```
