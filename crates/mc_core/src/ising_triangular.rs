@@ -1,4 +1,4 @@
-use numpy::PyArray2;
+use numpy::{PyArray2, PyArrayMethods, PyUntypedArrayMethods};
 use pyo3::prelude::*;
 use rand::Rng;
 use rand_xoshiro::rand_core::SeedableRng;
@@ -228,8 +228,22 @@ impl IsingTriangularRust {
 
     /// Python 側にスピン配位を (L, L) の NumPy 2次元配列として返す (可視化用)
     pub fn get_spins<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArray2<i8>>> {
-        use numpy::PyArrayMethods;
         let arr1d = numpy::PyArray1::from_vec(py, self.spins.clone());
         arr1d.reshape([self.l, self.l])
+    }
+
+    /// Python の NumPy 2次元配列 (L x L) からスピン配位を設定する
+    pub fn set_spins(&mut self, array: &Bound<'_, PyArray2<i8>>) -> PyResult<()> {
+        let shape = array.shape();
+        if shape != [self.l, self.l] {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "Shape mismatch: expected [{}, {}], got {:?}",
+                self.l, self.l, shape
+            )));
+        }
+        let readonly = array.readonly();
+        let slice = readonly.as_slice()?;
+        self.spins.copy_from_slice(slice);
+        Ok(())
     }
 }
