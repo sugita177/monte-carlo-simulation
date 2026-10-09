@@ -39,3 +39,4 @@ target-version = "py312"
 testpaths = ["models"]
 python_files = ["test_*.py"]
 pythonpath = ["."]
+addopts = ["--import-mode=importlib"]

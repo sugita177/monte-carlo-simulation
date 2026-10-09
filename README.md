@@ -167,17 +167,28 @@ uv run maturin develop --release --manifest-path crates/mc_core/Cargo.toml
 
 ### 5.4. 動作確認とテスト実行
 
-本プロジェクトでは、コア計算の信頼性を担保するため **Rust ネイティブ単体テスト** と **Python 結合テスト** の 2 層テスト体制をとっています：
+本プロジェクトでは、コア計算の信頼性と再現性を担保するため **Rust ネイティブ単体テスト** と **Python 結合テスト** の 2 層テスト体制をとっています：
 
 ```bash
-# 1. Rust コアエンジンのネイティブ単体テスト (基底状態、T->0 凍結、T->inf 受託率)
-uv run cargo test --manifest-path crates/mc_core/Cargo.toml --no-default-features
+# 1. Rust コアエンジンのネイティブ単体テスト (全モデル・全クレート一括)
+uv run cargo test --no-default-features
 
-# 2. Python 結合テストおよびシミュレーション全体の検証 (pytest)
+# 2. 特定のモデルのみ Rust ネイティブテストを実行する場合
+# (例: 三角格子反強磁性モデル)
+uv run cargo test --test test_ising_triangular --no-default-features
+# (例: 2次元正方格子イジングモデル)
+uv run cargo test --lib --no-default-features
+
+# 3. Python 結合テストおよびシミュレーション全体の検証 (pytest)
 uv run pytest
+
+# 4. 特定モデルの Python テストのみ実行する場合
+uv run pytest models/model_02_ising_triangular_af/tests/
 ```
-> **Note (macOS での Rust テスト)**:
-> PyO3 の `extension-module` 特有のリンカ挙動に対応するため、Rust ネイティブテスト時は `--no-default-features` を付与し、`uv run` 経由で Python 仮想環境のライブラリとリンクして実行します。
+
+> **Note (macOS / PyO3 での Rust ネイティブテスト実行について)**:
+> `crates/mc_core/Cargo.toml` では、Python 拡張モジュール（C-extension）用の `pyo3/extension-module` がデフォルト有効になっています。この設定は「Python インタプリタ実行時に C-API シンボルが提供される」前提のため、Rust がテスト用スタンドアロンバイナリをリンクする際にシンボル未解決エラー（`_PyType_FromSpec` など）が発生します。
+> したがって、Rust ネイティブで `cargo test` を実行する際は **必ず `--no-default-features` を付与し、`uv run` 経由で仮想環境（`.venv`）内の Python 共有ライブラリとリンク** させてください。
 
 ---
 
