@@ -41,7 +41,7 @@ $$
 | 状態 | 低温相 ($T < T_{\mathrm{BKT}}$) | 高温相 ($T > T_{\mathrm{BKT}}$) |
 | :--- | :--- | :--- |
 | **主たる励起** | スピン波（調和振動）＋ **束縛された渦・反渦対** | **解離した自由な渦・反渦** |
-| **スピン相関 $C(r)$** | **代数的減衰（べき乗則）** $C(r) \sim r^{-\eta(T)}$（准長距離秩序・臨界相） | **指数関数的減衰** $C(r) \sim \exp(-r/\xi)$（無秩序相） |
+| **スピン相関 $C(r)$** | **代数的減衰（べき乗則）** $C(r) \sim r^{-\eta(T)}$（準長距離秩序・臨界相） | **指数関数的減衰** $C(r) \sim \exp(-r/\xi)$（無秩序相） |
 | **渦の振る舞い** | 渦（$+1$）と反渦（$-1$）が対（Pairs）を作り、遠距離からは相殺 | 対が解離（Unbinding）し、孤立した渦が自由に浮遊 |
 | **秩序変数** | 自発磁化はゼロ $\langle \|\vec{m}\| \rangle \to 0$ | 自発磁化はゼロ $\langle \|\vec{m}\| \rangle \to 0$ |
 | **スピン硬さ $\Upsilon$** | 有界（有限の剛性を持つ） | ゼロ（流体のように柔らかい） |
@@ -131,13 +131,33 @@ Metropolis 受託確率 $P_{\mathrm{acc}} = \min(1, e^{-\beta \Delta E})$ で更
 ## 6. ディレクトリ構造
 
 ```text
-models/model_04_xy_2d/
-├── README.md                  # 本ファイル
-├── src/
-│   ├── xy_model.py            # Python シミュレーション・可視化
-│   ├── observables.py         # 観測量・渦度計算
-│   ├── plot_bkt_transition.py # 比熱・渦密度・相関解析
-│   └── animate_vortices.py    # 渦・反渦対ダイナミクスの動画生成
-└── tests/
-    └── test_xy_model.py       # 単体・統合テスト
+monte-carlo-simulation/
+├── crates/mc_core/
+│   ├── src/
+│   │   ├── lib.rs
+│   │   └── xy_2d.rs                 # [Rust] コア計算エンジン (Metropolis / Wolff / 渦度計算)
+│   └── tests/
+│       └── test_xy_2d.rs            # [Rust] コア単体テスト (幾何学的エネルギー・局所差分検証)
+└── models/model_04_xy_2d/
+    ├── README.md                    # 本ファイル (理論背景・数理定式化・検証計画)
+    ├── src/
+    │   ├── simulation.py            # [Python] 温度スイープ・サンプリング実行制御
+    │   ├── observables.py           # [Python] 観測量集計 (エネルギー, 比熱, 渦密度)
+    │   ├── plot_bkt_transition.py   # [Python] BKT転移解析プロット (比熱ピーク, 渦解離)
+    │   └── animate_vortices.py      # [Python] スピンベクトル場 ＋ 渦対の実空間アニメーション
+    └── tests/
+        └── test_xy_model.py         # [Python] 統合テスト (PyO3 バインディング検証)
 ```
+
+---
+
+## 7. テスト・検証
+
+```bash
+# Rust 単体テスト
+uv run cargo test --test test_xy_2d --no-default-features
+
+# Python 統合テスト
+uv run pytest models/model_04_xy_2d/tests/
+```
+
