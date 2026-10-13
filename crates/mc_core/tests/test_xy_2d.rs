@@ -159,3 +159,22 @@ fn test_wolff_clustering() {
         }
     }
 }
+
+#[test]
+fn test_step_wolff_mcs() {
+    let l = 8;
+    let n = l * l;
+    let mut sim = XY2DRust::new(l, 1.0, 1.0, 1.0, Some(888));
+
+    // 1 MCS 分の Wolff 更新を実行
+    let total_flipped = sim.step_wolff_mcs();
+
+    // 反転スピン総数は必ず N (64) 以上であること
+    assert!(
+        total_flipped >= n,
+        "Total flipped spins ({}) must be >= N ({})",
+        total_flipped,
+        n
+    );
+}
+

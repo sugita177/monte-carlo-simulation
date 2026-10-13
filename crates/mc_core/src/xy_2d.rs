@@ -240,6 +240,15 @@ impl XY2DRust {
         cluster_size
     }
 
+    /// 反転スピン総数が N 以上になるまで Wolff ステップを繰り返し、1 MCS 分の更新を行う
+    pub fn step_wolff_mcs(&mut self) -> usize {
+        let mut total_flipped = 0;
+        while total_flipped < self.n {
+            total_flipped += self.step_wolff();
+        }
+        total_flipped
+    }
+
     /// 重複なし全エネルギー E = -J Σ_<i,j> cos(θ_i - θ_j) を計算する (右と上の 2 方向走査)
     pub fn total_energy(&self) -> f64 {
         let l = self.l;
