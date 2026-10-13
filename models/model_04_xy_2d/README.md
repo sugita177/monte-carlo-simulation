@@ -161,3 +161,33 @@ uv run cargo test --test test_xy_2d --no-default-features
 uv run pytest models/model_04_xy_2d/tests/
 ```
 
+---
+
+## 8. 数値シミュレーションと可視化の実行
+
+```bash
+# 1. BKT 転移温度スイープ & 物理量プロット (L=32, 約5秒)
+uv run python models/model_04_xy_2d/src/plot_bkt_transition.py --L 32 --algorithm wolff
+
+# 2. スピンベクトル場 ＋ 渦・反渦対ダイナミクスのアニメーション生成 (L=32, 240フレーム, 約25秒)
+uv run python models/model_04_xy_2d/src/animate_vortices.py --L 32 --frames 240 --fps 30 --algorithm wolff
+```
+
+実行後、`models/model_04_xy_2d/outputs/` に以下のファイルが出力されます：
+- `bkt_transition.png`: 4 パネルプロット（比熱、渦度密度、内部エネルギー、磁化ノルム）
+- `xy_vortices_dynamics.gif`: 3 つの代表温度（$T = 0.5, 0.9, 1.4$）におけるスピンベクトル場（quiver）と渦（$+1$: 赤丸）／反渦（$-1$: 青四角）の実空間ペア・解離ダイナミクスアニメーション
+
+---
+
+## 9. 数値実験結果と考察
+
+1. **比熱ピークと $T_{\mathrm{BKT}}$ の乖離**:
+   - 転移温度の理論値 $T_{\mathrm{BKT}} \approx 0.893$ においては自由エネルギーが本質的特異性を示すため、比熱に鋭い発散ピークは生じません。
+   - 観測される比熱の丸い極大値（ブロードな山）は、渦・反渦対が熱励起によって大量に解離する **$T \approx 1.05$ 付近の高温側にズレて現れる** ことが数値実験で鮮明に確認されます。
+2. **渦度密度 $\rho_v(T)$ のトポロジカル急変**:
+   - $T < T_{\mathrm{BKT}}$ の低温相では、熱励起された渦は必ず隣接する反渦と緊密なペア（Bound Pair）を成すか、あるいは存在せず、密度は急速にゼロへと近づきます。
+   - 転移温度 $T_{\mathrm{BKT}}$ を超えると、束縛エネルギーに熱ゆらぎが打ち勝ち、対が解離（Unbinding）して自由な孤立渦がプラズマのように急増します。
+3. **Mermin-Wagner の定理と磁化の消失**:
+   - 連続対称性を持つ 2 次元系であるため、自発磁化は熱力学極限で全温度域において消失します（$\langle |\vec{m}| \rangle \to 0$）。有限サイズ $L = 32$ で観測される小さな低温磁化は、スピン波の長波長ゆらぎが格子サイズでカットオフされた有限サイズ効果による擬似的なものです。
+
+

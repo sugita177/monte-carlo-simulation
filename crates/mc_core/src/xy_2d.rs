@@ -230,10 +230,10 @@ impl XY2DRust {
             }
         }
 
-        // 3. クラスター内の全スピンを鏡映反転: θ' = wrap(2φ - θ)
+        // 3. クラスター内の全スピンを鏡映反転: S' = S - 2(S·r)r => θ' = wrap(π + 2φ - θ)
         for i in 0..n {
             if in_cluster[i] {
-                self.thetas[i] = wrap_angle(2.0 * phi - self.thetas[i]);
+                self.thetas[i] = wrap_angle(PI + 2.0 * phi - self.thetas[i]);
             }
         }
 
