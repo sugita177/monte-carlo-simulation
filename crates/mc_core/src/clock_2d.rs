@@ -4,7 +4,7 @@
 //! 角度は θ_i = 2π k_i / q に対応します。
 //! cos/sin の計算は事前生成したルックアップテーブル (LUT) を参照して高速化します。
 
-use numpy::{PyArray2, PyArrayMethods};
+use numpy::{PyArray2, PyArrayMethods, PyUntypedArrayMethods};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use rand::Rng;
@@ -211,6 +211,21 @@ impl Clock2DRust {
     pub fn get_spins<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArray2<u8>>> {
         let arr1d = numpy::PyArray1::from_vec(py, self.spins.clone());
         arr1d.reshape([self.l, self.l])
+    }
+
+    /// 2次元 NumPy 配列 (L x L) からスピン状態 (0 .. q-1) を設定
+    pub fn set_spins(&mut self, array: &Bound<'_, PyArray2<u8>>) -> PyResult<()> {
+        let shape = array.shape();
+        if shape != [self.l, self.l] {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "Shape mismatch: expected [{}, {}], got {:?}",
+                self.l, self.l, shape
+            )));
+        }
+        let readonly = array.readonly();
+        let slice = readonly.as_slice()?;
+        self.spins.copy_from_slice(slice);
+        Ok(())
     }
 
     /// スピンの連続角度 θ_i = 2π k_i / q を 2次元 NumPy 配列 (L x L) として取得

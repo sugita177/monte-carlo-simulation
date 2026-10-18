@@ -49,6 +49,12 @@ class ClockSimulation:
             initial=initial,
         )
 
+    def set_temperature(self, temperature: float) -> None:
+        """シミュレーションの温度 (逆温度 beta) を更新する."""
+        self.temperature = temperature
+        self.beta = 1.0 / temperature if temperature > 0 else 1e9
+        
+
     def thermalize(self, steps: int) -> None:
         """指定ステップ数だけ熱平衡化を実行する."""
         for _ in range(steps):
@@ -59,10 +65,9 @@ class ClockSimulation:
         mcs_measure: int,
         sample_interval: int = 2,
     ) -> ClockSimulationResult:
-        """サンプリング計測ループを実行する.
+        """サンプリング計測ループを実行する
 
-        【学習用 TODO】:
-        以下の手順でサンプリングを行い、ClockSimulationResult を返してください。
+        以下の手順でサンプリングを行い、ClockSimulationResult を返す
 
         手順:
         1. ClockObservables(self.L, self.q, self.temperature) を初期化
@@ -95,6 +100,7 @@ def run_single_temperature(
     sample_interval: int = 2,
     mode: Literal["random", "adjacent"] = "adjacent",
     j: float = 1.0,
+    initial_spins: np.ndarray | None = None,
     seed: int | None = None,
 ) -> ClockSimulationResult:
     """単一温度における熱平衡化とサンプリング計測のヘルパー関数."""
@@ -106,5 +112,50 @@ def run_single_temperature(
         mode=mode,
         seed=seed,
     )
+
+    # 初期スピン状態を設定
+    if initial_spins is not None:
+        sim.core.set_spins(initial_spins)
+    
     sim.thermalize(mcs_thermalize)
     return sim.run(mcs_measure=mcs_measure, sample_interval=sample_interval)
+
+def run_temperature_sweep(
+    lattice_size: int,
+    q: int,
+    temperatures: np.ndarray | list[float],
+    mcs_thermalize: int = 3000,
+    mcs_measure: int = 6000,
+    sample_interval: int = 2,
+    mode: Literal["random", "adjacent"] = "adjacent",
+    j: float = 1.0,
+    seed: int | None = None,
+) -> list[ClockSimulationResult]:
+    """各温度でのシミュレーションを実行し、結果のリストを返す."""
+    results: list[ClockSimulationResult] = []
+
+    # 高温から低温へとソート（徐冷アニーリング）
+    temps_descending = np.sort(temperatures)[::-1]
+
+    # 1. 最初の高温でシミュレーションインスタンスを生成
+    sim = ClockSimulation(
+        lattice_size=lattice_size,
+        q=q,
+        temperature=float(temps_descending[0]),
+        j=j,
+        mode=mode,
+        seed=seed,
+        initial="random",
+    )
+
+    # 2. 温度を下げながら継続してサンプリング
+    # 初期スピン配置は前の温度の最終スピン配置を使用する
+    for T in tqdm(temps_descending, desc=f"Clock Sweep (L={lattice_size}, q={q}, {mode})"):
+        sim.set_temperature(float(T))
+        sim.thermalize(mcs_thermalize)
+        res = sim.run(mcs_measure=mcs_measure, sample_interval=sample_interval)
+        results.append(res)
+
+    # 低温順 (昇順) にソートして返す
+    results.sort(key=lambda r: r.temperature)
+    return results

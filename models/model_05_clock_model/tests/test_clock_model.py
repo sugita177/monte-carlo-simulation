@@ -111,3 +111,49 @@ def test_low_temperature_ordered_state() -> None:
     assert res.mean_energy_per_spin < -1.8
     assert res.mean_magnetization > 0.9
     assert res.clock_orientation > 0.8
+
+
+def test_set_spins() -> None:
+    """Rust コアへの set_spins による任意スピン配位の設定を検証."""
+    L = 4
+    q = 6
+    sim = Clock2DRust(L, q, j=1.0, seed=42)
+
+    # 全てスピン 2 の配位を作成
+    custom_spins = np.full((L, L), 2, dtype=np.uint8)
+    sim.set_spins(custom_spins)
+
+    # 取得して一致を確認
+    retrieved = sim.get_spins()
+    assert np.array_equal(retrieved, custom_spins)
+
+    # 全て同じスピンなので基底状態エネルギー E = -2N = -32.0
+    assert math.isclose(sim.total_energy(), -32.0, rel_tol=1e-6)
+
+
+def test_temperature_sweep_annealing() -> None:
+    """徐冷アニーリング (run_temperature_sweep) の実行と温度順序を検証."""
+    from models.model_05_clock_model.src.simulation import run_temperature_sweep
+
+    L = 4
+    q = 6
+    temps = [0.4, 0.8, 1.2]
+    results = run_temperature_sweep(
+        lattice_size=L,
+        q=q,
+        temperatures=temps,
+        mcs_thermalize=50,
+        mcs_measure=100,
+        sample_interval=2,
+        mode="adjacent",
+        seed=42,
+    )
+
+    assert len(results) == 3
+    # 戻り値は温度の昇順にソートされていること
+    assert results[0].temperature == 0.4
+    assert results[1].temperature == 0.8
+    assert results[2].temperature == 1.2
+
+    # 低温 (T=0.4) の方が高温 (T=1.2) よりエネルギーが低いこと
+    assert results[0].mean_energy_per_spin < results[2].mean_energy_per_spin

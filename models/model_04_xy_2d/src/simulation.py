@@ -59,8 +59,6 @@ def run_single_temperature(
         thetas_c = np.ascontiguousarray(initial_thetas, dtype=np.float64)
         sim.set_thetas(thetas_c)
 
-    n_spins = lattice_size * lattice_size
-
     def step_one_mcs() -> None:
         """1 モンテカルロステップ (MCS) を進める.
 
